@@ -5,7 +5,6 @@ export const generateToken = (payload) => {
         expiresIn: process.env.JWT_EXPIRES_IN
     });
 };
-
 export const verifyToken = (token) => {
     return jwt.verify(token, process.env.JWT_SECRET);
 };
