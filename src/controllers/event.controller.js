@@ -2,12 +2,14 @@ import { matchedData } from "express-validator";
 import Event from "../models/Event.js";
 import Category from "../models/Category.js";
 
+// Configuración para mostrar las relaciones
 const populateEvent = (query) => {
     return query
         .populate("organizer", "username email profile")
         .populate("categories", "name description");
 };
 
+// Verificar que todas las categorías existan
 const validateCategories = async (categories) => {
     if (!categories) return true;
 
@@ -18,10 +20,12 @@ const validateCategories = async (categories) => {
     return foundCategories === categories.length;
 };
 
+// Crear un evento
 export const createEvent = async (req, res) => {
     try {
         const data = matchedData(req, { locations: ["body"] });
 
+        // Verificar que el título no esté repetido
         const existingEvent = await Event.findOne({
             title: data.title
         });
@@ -32,6 +36,7 @@ export const createEvent = async (req, res) => {
             });
         }
 
+        // Verificar que las categorías existan
         const categoriesAreValid = await validateCategories(data.categories);
 
         if (!categoriesAreValid) {
@@ -40,6 +45,7 @@ export const createEvent = async (req, res) => {
             });
         }
 
+        // Verificar que la fecha de finalización sea posterior a la de inicio
         if (new Date(data.endDate) <= new Date(data.startDate)) {
             return res.status(400).json({
                 message: "La fecha de finalización debe ser posterior a la fecha de inicio"
@@ -68,6 +74,7 @@ export const createEvent = async (req, res) => {
     }
 };
 
+// Listar todos los eventos
 export const getEvents = async (req, res) => {
     try {
         const events = await populateEvent(Event.find());
@@ -85,6 +92,7 @@ export const getEvents = async (req, res) => {
     }
 };
 
+// Listar los eventos del usuario autenticado
 export const getMyEvents = async (req, res) => {
     try {
         const events = await populateEvent(
@@ -104,6 +112,7 @@ export const getMyEvents = async (req, res) => {
     }
 };
 
+// Obtener un evento por su ID
 export const getEventById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -129,6 +138,7 @@ export const getEventById = async (req, res) => {
     }
 };
 
+// Actualizar un evento
 export const updateEvent = async (req, res) => {
     try {
         const { id } = req.params;
@@ -142,6 +152,7 @@ export const updateEvent = async (req, res) => {
             });
         }
 
+        // Verificar que el título no esté utilizado por otro evento
         if (data.title) {
             const existingEvent = await Event.findOne({
                 title: data.title,
@@ -155,6 +166,7 @@ export const updateEvent = async (req, res) => {
             }
         }
 
+        // Verificar que las categorías existan
         if (data.categories) {
             const categoriesAreValid = await validateCategories(data.categories);
 
@@ -165,6 +177,7 @@ export const updateEvent = async (req, res) => {
             }
         }
 
+        // Comprobar las fechas considerando los valores actuales
         const startDate = data.startDate || event.startDate;
         const endDate = data.endDate || event.endDate;
 
@@ -172,6 +185,16 @@ export const updateEvent = async (req, res) => {
             return res.status(400).json({
                 message: "La fecha de finalización debe ser posterior a la fecha de inicio"
             });
+        }
+
+        // Actualizar la ubicación sin perder los campos que no se modificaron
+        if (data.location) {
+            event.location = {
+                ...event.location.toObject(),
+                ...data.location
+            };
+
+            delete data.location;
         }
 
         Object.assign(event, data);
@@ -195,6 +218,7 @@ export const updateEvent = async (req, res) => {
     }
 };
 
+// Eliminar un evento
 export const deleteEvent = async (req, res) => {
     try {
         const { id } = req.params;
