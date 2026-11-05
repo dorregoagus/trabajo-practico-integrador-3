@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import connectDB from "./src/config/database.js";
 import authRoutes from "./src/routes/auth.routes.js";
 import userRoutes from "./src/routes/user.routes.js";
+import eventRoutes from "./src/routes/event.routes.js";
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/events", eventRoutes);
 
 app.get("/", (req, res) => {
     res.status(200).json({
